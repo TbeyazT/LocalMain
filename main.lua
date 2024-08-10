@@ -44,6 +44,7 @@ local AnimationComponent = UIModule:GetComponent("Animation")
 local PopupComponent = UIModule:GetComponent("Popup")
 local BillboardComponent = UIModule:GetComponent("Billboard")
 local FlagDatas = require(Storage.Modules.FlagData)
+local DanceIds = require(Storage.Modules.DancesData)
 
 repeat
 	task.wait(0.5)
@@ -116,6 +117,18 @@ local function loadAnimation(Animator,ID)
 	local LoadedAnimation = Animator:LoadAnimation(animation)
 	animation:Destroy()
 	return LoadedAnimation
+end
+
+local function playRandomAnimation(model,looped)
+	if model:FindFirstChild("Humanoid") then
+		local Animator = model.Humanoid:FindFirstChildOfClass("Animator")
+		if Animator then
+			local Animation = getRandomChild(DanceIds)
+			local LoadedAnimation = loadAnimation(Animator,Animation)
+			LoadedAnimation:Play()
+			LoadedAnimation.Looped = looped
+		end
+	end
 end
 
 Cmdr:SetActivationKeys({Enum.KeyCode.F2})
@@ -457,11 +470,12 @@ local function updateSelected()
 			end
 		end
 		
-		local Model = SelectedFrame.TowerModel:FindFirstChildWhichIsA("Model")
+		local Model = SelectedFrame.TowerModel.WorldModel:FindFirstChildWhichIsA("Model")
 		if Model then
 			if RotateConnection then
 				RotateConnection:Disconnect()
 			end
+			warn("destroying "..Model.Name)
 			Model:Destroy()
 		end
 		updateTowers()
@@ -469,7 +483,7 @@ local function updateSelected()
 			local CloneModel = TowerConfig:FindFirstChildWhichIsA("Model")
 			if CloneModel then
 				CloneModel = CloneModel:Clone()
-				CloneModel.Parent = SelectedFrame.TowerModel
+				CloneModel.Parent = SelectedFrame.TowerModel.WorldModel
 				CloneModel.PrimaryPart = CloneModel.HumanoidRootPart
 				CloneModel.HumanoidRootPart.Anchored = true
 				CloneModel:PivotTo(TowerViewportCFrame)
@@ -484,19 +498,7 @@ local function updateSelected()
 						CloneModel:PivotTo(CloneModel.PrimaryPart.CFrame*CFrame.Angles(0,math.rad(1),0))
 					end
 				end)
-				local Animation = CloneModel:FindFirstChildWhichIsA("Animation")
-				if Animation then
-					local Humanoid = CloneModel:FindFirstChildOfClass("Humanoid")
-					if Humanoid then						
-						local Animator = Humanoid
-						local Track = Animator:LoadAnimation(Animation)
-						Track:Play()
-					else
-						warn("No Humanoid found in the model to play the animation")
-					end
-				else
-					warn("No Animation found in the model")
-				end
+				playRandomAnimation(CloneModel,true)
 			end
 			SelectedFrame.EquipButton.Label.Text = "Equip"
 			SelectedFrame.EquipButton.Image = "rbxassetid://18632891142"
@@ -504,7 +506,7 @@ local function updateSelected()
 			local CloneModel = TowerConfig:FindFirstChildWhichIsA("Model")
 			if CloneModel then
 				CloneModel = CloneModel:Clone()
-				CloneModel.Parent = SelectedFrame.TowerModel
+				CloneModel.Parent = SelectedFrame.TowerModel.WorldModel
 				CloneModel.PrimaryPart = CloneModel.HumanoidRootPart
 				CloneModel.HumanoidRootPart.Anchored = true
 				CloneModel:PivotTo(TowerViewportCFrame)
@@ -519,19 +521,7 @@ local function updateSelected()
 						CloneModel:PivotTo(CloneModel.PrimaryPart.CFrame*CFrame.Angles(0,math.rad(1),0))
 					end
 				end)
-				local Animation = CloneModel:FindFirstChildWhichIsA("Animation")
-				if Animation then
-					local Humanoid = CloneModel:FindFirstChildOfClass("Humanoid")
-					if Humanoid then						
-						local Animator = Humanoid
-						local Track = Animator:LoadAnimation(Animation)
-						Track:Play()
-					else
-						warn("No Humanoid found in the model to play the animation")
-					end
-				else
-					warn("No Animation found in the model")
-				end
+				playRandomAnimation(CloneModel,true)
 			end
 			SelectedFrame.EquipButton.Label.Text = "Unequip"
 			SelectedFrame.EquipButton.Image = "rbxassetid://18611141536"
@@ -1054,13 +1044,13 @@ animClassEq:Init(nil, function()
 				PopupComponent:Spawn("Error","You Equipped Max Amount Of Towers",1)
 				return
 			end
-			Storage.Events.EquipTower:FireServer(SelectedTower, SelectedTowerKey)
+			Storage.Events.EquipTower:FireServer(SelectedTower)
 			task.wait(0.1)
 			updateSelected()
 			updateInventory()
 		else
 			warn("unequipping")
-			Storage.Events.UnequipTower:FireServer(SelectedTower, SelectedTowerKey)
+			Storage.Events.UnequipTower:FireServer(SelectedTower)
 			task.wait(0.1)
 			updateSelected()
 			updateInventory()
